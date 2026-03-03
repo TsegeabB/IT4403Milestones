@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Book Detail – BookSphere</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #1a1512;
+      --paper: #f5f0e8;
+      --cream: #ede7d9;
+      --rust: #b85c2c;
+      --rust-light: #d4733f;
+      --gold: #c9a84c;
+      --muted: #7a6f62;
+      --border: #cfc5b4;
+    }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 2.5rem 4rem 2rem;
+      position: relative; overflow: hidden;
+    }
+    header::before {
+      content:''; position: absolute; top:-50px; right:-50px;
+      width:200px; height:200px; border-radius:50%;
+      background: rgba(201,168,76,0.09);
+    }
+    .header-eyebrow {
+      font-size: 0.72rem; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem;
+    }
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 900; color: var(--paper);
+    }
+    header h1 span { color: var(--rust-light); }
+    nav { margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    nav a {
+      display: inline-block; padding: 0.4rem 1rem;
+      border: 1px solid rgba(205,197,180,0.35); border-radius: 2px;
+      color: var(--paper); text-decoration: none;
+      font-size: 0.82rem; font-weight: 500;
+      transition: background 0.18s, border-color 0.18s;
+    }
+    nav a:hover { background: rgba(255,255,255,0.08); border-color: var(--gold); color: var(--gold); }
+    nav a.active { background: var(--rust); border-color: var(--rust); color: #fff; }
+
+    main { max-width: 980px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+
+    /* Loading */
+    #loading { text-align:center; padding:4rem 2rem; font-size:1rem; color:var(--muted); }
+    .spinner {
+      display:inline-block; width:36px; height:36px;
+      border:3px solid var(--border); border-top-color:var(--rust);
+      border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:1rem;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Book layout */
+    #book-detail { display:none; }
+
+    .book-hero {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 3rem;
+      margin-bottom: 3rem;
+      align-items: start;
+    }
+    @media (max-width: 640px) {
+      .book-hero { grid-template-columns: 1fr; }
+    }
+
+    .cover-panel {
+      position: sticky;
+      top: 2rem;
+    }
+    .cover-panel img {
+      width: 100%;
+      border-radius: 3px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+      display: block;
+    }
+    .cover-panel .no-cover {
+      width: 100%; aspect-ratio: 2/3;
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--muted);
+      text-align: center; padding: 1rem;
+    }
+
+    .cover-actions { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .btn-primary {
+      display: block; text-align: center; padding: 0.6rem 1rem;
+      background: var(--rust); color: #fff; text-decoration: none;
+      border-radius: 2px; font-size: 0.85rem; font-weight: 500;
+      border: none; cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: var(--rust-light); }
+    .btn-secondary {
+      display: block; text-align: center; padding: 0.55rem 1rem;
+      background: none; color: var(--ink); text-decoration: none;
+      border-radius: 2px; font-size: 0.85rem; font-weight: 500;
+      border: 1px solid var(--border); cursor: pointer; font-family: inherit;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--rust); color: var(--rust); }
+
+    /* Meta chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    .chip {
+      font-size: 0.7rem; font-weight: 500; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 0.2rem 0.6rem;
+      border-radius: 2px; border: 1px solid var(--border);
+      background: var(--cream); color: var(--muted);
+    }
+
+    .book-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 900; line-height: 1.1;
+      color: var(--ink); margin-bottom: 0.4rem;
+    }
+    .book-subtitle {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem; color: var(--muted);
+      font-style: italic; margin-bottom: 1rem;
+    }
+    .book-authors {
+      font-size: 1rem; color: var(--rust); font-weight: 500; margin-bottom: 1.4rem;
+    }
+
+    .rating-block {
+      display: flex; align-items: center; gap: 0.6rem;
+      margin-bottom: 1.2rem;
+    }
+    .stars { color: var(--gold); font-size: 1.1rem; letter-spacing: 0.05em; }
+    .rating-num { font-weight: 700; font-size: 1rem; }
+    .rating-count { font-size: 0.8rem; color: var(--muted); }
+
+    .description {
+      font-size: 0.92rem; line-height: 1.75; color: #3a3228;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Metadata table */
+    .meta-section { margin-bottom: 2.5rem; }
+    .section-heading {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; font-weight: 700; margin-bottom: 0.8rem;
+      padding-bottom: 0.4rem; border-bottom: 1px solid var(--border);
+    }
+    .meta-table { width: 100%; border-collapse: collapse; }
+    .meta-table tr { border-bottom: 1px solid #e8e2d8; }
+    .meta-table tr:last-child { border-bottom: none; }
+    .meta-table th {
+      width: 38%; padding: 0.55rem 0.5rem 0.55rem 0;
+      text-align: left; font-size: 0.78rem; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+      vertical-align: top;
+    }
+    .meta-table td {
+      padding: 0.55rem 0;
+      font-size: 0.88rem; color: var(--ink); line-height: 1.5;
+    }
+    .meta-table td a { color: var(--rust); text-decoration: none; }
+    .meta-table td a:hover { text-decoration: underline; }
+
+    /* Categories */
+    .category-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .category-tag {
+      font-size: 0.75rem; background: var(--cream);
+      border: 1px solid var(--border); border-radius: 2px;
+      padding: 0.2rem 0.6rem; color: var(--ink);
+    }
+
+    /* Access info */
+    .access-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.8rem;
+    }
+    .access-item {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 3px; padding: 0.8rem 1rem;
+    }
+    .access-item .label {
+      font-size: 0.7rem; font-weight: 500; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.25rem;
+    }
+    .access-item .value { font-size: 0.9rem; font-weight: 500; }
+    .yes { color: #2e7d32; }
+    .no  { color: #c62828; }
+    .partial { color: var(--rust); }
+
+    /* Identifiers */
+    .id-list { list-style: none; }
+    .id-list li { font-size: 0.87rem; margin-bottom: 0.3rem; }
+    .id-list .id-type {
+      display: inline-block; min-width: 80px;
+      font-size: 0.7rem; font-weight: 500; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Book<span>Sphere</span> — Book detail</h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="google-books-search.html">Search results</a>
+    <a href="google-books-book.html" class="active">Book detail</a>
+  </nav>
+</header>
+
+<main>
+  <div id="loading"><div class="spinner"></div><br>Loading book details…</div>
+  <div id="error-msg" style="color:#c0392b;padding:2rem;display:none;"></div>
+  <div id="book-detail"></div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+  function starsHtml(avg) {
+    var full = Math.round(avg);
+    var s = '';
+    for (var i = 0; i < 5; i++) s += (i < full) ? '★' : '☆';
+    return s;
+  }
+
+  function accessLabel(val) {
+    if (val === true || val === 'ALLOWED' || val === 'ALL_PAGES') return '<span class="yes">Yes</span>';
+    if (val === false || val === 'NOT_ALLOWED') return '<span class="no">No</span>';
+    if (val === 'PARTIAL') return '<span class="partial">Partial</span>';
+    return '<span>' + val + '</span>';
+  }
+
+  $(document).ready(function() {
+    $.getJSON('google-books-book.json')
+      .done(function(data) {
+        $('#loading').hide();
+
+        var info   = data.volumeInfo || {};
+        var sale   = data.saleInfo   || {};
+        var access = data.accessInfo || {};
+
+        var title     = info.title || 'Untitled';
+        var subtitle  = info.subtitle || '';
+        var authors   = info.authors ? info.authors.join(', ') : 'Unknown Author';
+        var publisher = info.publisher || '—';
+        var pubDate   = info.publishedDate || '—';
+        var pageCount = info.pageCount || '—';
+        var printedPages = info.printedPageCount || '—';
+        var language  = info.language || '—';
+        var rating    = info.averageRating || null;
+        var ratingCount = info.ratingsCount || 0;
+        var maturity  = info.maturityRating ? info.maturityRating.replace('_', ' ') : '—';
+        var printType = info.printType || '—';
+        var desc      = info.description || '';
+        var categories = info.categories || [];
+        var identifiers = info.industryIdentifiers || [];
+        var dims = info.dimensions || null;
+
+        var thumbnail = null;
+        if (info.imageLinks) {
+          thumbnail = (info.imageLinks.large || info.imageLinks.medium || info.imageLinks.thumbnail || null);
+          if (thumbnail) thumbnail = thumbnail.replace('http://', 'https://');
+        }
+
+        var previewLink = info.previewLink || null;
+        var infoLink    = info.infoLink    || null;
+        var webReader   = access.webReaderLink || null;
+
+        /* ── Build HTML ── */
+        var $d = $('#book-detail');
+
+        // CHIPS
+        var chipsHtml = '<div class="chips">';
+        chipsHtml += '<span class="chip">' + printType + '</span>';
+        chipsHtml += '<span class="chip">' + language.toUpperCase() + '</span>';
+        chipsHtml += '<span class="chip">' + maturity + '</span>';
+        if (sale.isEbook) chipsHtml += '<span class="chip">eBook</span>';
+        chipsHtml += '</div>';
+
+        // COVER
+        var coverImgHtml = thumbnail
+          ? '<img src="' + thumbnail + '" alt="Cover of ' + $('<span>').text(title).html() + '" />'
+          : '<div class="no-cover">No Cover Available</div>';
+
+        // RATING
+        var ratingHtml = '';
+        if (rating) {
+          ratingHtml = '<div class="rating-block">' +
+            '<span class="stars">' + starsHtml(rating) + '</span>' +
+            '<span class="rating-num">' + rating + '</span>' +
+            '<span class="rating-count">/ 5 &nbsp;(' + ratingCount + ' rating' + (ratingCount !== 1 ? 's' : '') + ')</span>' +
+            '</div>';
+        }
+
+        // DESCRIPTION
+        var descHtml = '';
+        if (desc) {
+          descHtml = '<div class="description">' + desc + '</div>';
+        }
+
+        // IDENTIFIERS
+        var idHtml = '<ul class="id-list">';
+        $.each(identifiers, function(_, id) {
+          idHtml += '<li><span class="id-type">' + id.type + '</span> ' + id.identifier + '</li>';
+        });
+        idHtml += '</ul>';
+
+        // DIMENSIONS
+        var dimHtml = '—';
+        if (dims) {
+          dimHtml = (dims.height || '') + ' × ' + (dims.width || '') + ' × ' + (dims.thickness || '');
+        }
+
+        // CATEGORIES
+        var catHtml = '—';
+        if (categories.length) {
+          catHtml = '<div class="category-tags">';
+          $.each(categories, function(_, c) {
+            catHtml += '<span class="category-tag">' + $('<span>').text(c).html() + '</span>';
+          });
+          catHtml += '</div>';
+        }
+
+        // ACCESS
+        var readingModes = info.readingModes || {};
+        var epub = access.epub || {};
+        var pdf  = access.pdf  || {};
+
+        var accessHtml =
+          '<div class="access-grid">' +
+            '<div class="access-item"><div class="label">Viewability</div><div class="value">' + (access.viewability || '—') + '</div></div>' +
+            '<div class="access-item"><div class="label">Embeddable</div><div class="value">' + accessLabel(access.embeddable) + '</div></div>' +
+            '<div class="access-item"><div class="label">Public Domain</div><div class="value">' + accessLabel(access.publicDomain) + '</div></div>' +
+            '<div class="access-item"><div class="label">Text-to-Speech</div><div class="value">' + accessLabel(access.textToSpeechPermission) + '</div></div>' +
+            '<div class="access-item"><div class="label">ePub Available</div><div class="value">' + accessLabel(epub.isAvailable) + '</div></div>' +
+            '<div class="access-item"><div class="label">PDF Available</div><div class="value">' + accessLabel(pdf.isAvailable) + '</div></div>' +
+            '<div class="access-item"><div class="label">Text Mode</div><div class="value">' + accessLabel(readingModes.text) + '</div></div>' +
+            '<div class="access-item"><div class="label">Image Mode</div><div class="value">' + accessLabel(readingModes.image) + '</div></div>' +
+          '</div>';
+
+        // ACTION BUTTONS
+        var actionsHtml = '<div class="cover-actions">';
+        if (previewLink) actionsHtml += '<a href="' + previewLink + '" target="_blank" class="btn-primary">Preview Book ↗</a>';
+        if (infoLink)    actionsHtml += '<a href="' + infoLink    + '" target="_blank" class="btn-secondary">Google Books ↗</a>';
+        if (webReader)   actionsHtml += '<a href="' + webReader   + '" target="_blank" class="btn-secondary">Read Online ↗</a>';
+        actionsHtml += '</div>';
+
+        // ASSEMBLE
+        var html =
+          '<div class="book-hero">' +
+            '<div class="cover-panel">' + coverImgHtml + actionsHtml + '</div>' +
+            '<div class="book-info">' +
+              chipsHtml +
+              '<h1 class="book-title">' + $('<span>').text(title).html() + '</h1>' +
+              (subtitle ? '<p class="book-subtitle">' + $('<span>').text(subtitle).html() + '</p>' : '') +
+              '<p class="book-authors">By ' + $('<span>').text(authors).html() + '</p>' +
+              ratingHtml + descHtml +
+            '</div>' +
+          '</div>' +
+
+          '<div class="meta-section">' +
+            '<h2 class="section-heading">Publication Details</h2>' +
+            '<table class="meta-table">' +
+              '<tr><th>Publisher</th><td>' + $('<span>').text(publisher).html() + '</td></tr>' +
+              '<tr><th>Published</th><td>' + $('<span>').text(pubDate).html() + '</td></tr>' +
+              '<tr><th>Pages</th><td>' + pageCount + ' (printed: ' + printedPages + ')</td></tr>' +
+              '<tr><th>Language</th><td>' + language.toUpperCase() + '</td></tr>' +
+              '<tr><th>Dimensions</th><td>' + dimHtml + '</td></tr>' +
+              '<tr><th>Print Type</th><td>' + printType + '</td></tr>' +
+              '<tr><th>Maturity</th><td>' + maturity + '</td></tr>' +
+            '</table>' +
+          '</div>' +
+
+          '<div class="meta-section">' +
+            '<h2 class="section-heading">Identifiers</h2>' + idHtml +
+          '</div>' +
+
+          '<div class="meta-section">' +
+            '<h2 class="section-heading">Categories</h2>' + catHtml +
+          '</div>' +
+
+          '<div class="meta-section">' +
+            '<h2 class="section-heading">Access &amp; Availability</h2>' + accessHtml +
+          '</div>';
+
+        $d.html(html).show();
+      })
+      .fail(function(jqxhr, status, err) {
+        $('#loading').hide();
+        $('#error-msg').text('Failed to load book data: ' + err).show();
+      });
+  });
+</script>
+
+</body>
+</html>

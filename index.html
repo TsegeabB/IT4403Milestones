@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BookSphere – Book Search SPA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #1a1512;
+      --paper: #f5f0e8;
+      --cream: #ede7d9;
+      --rust: #b85c2c;
+      --rust-light: #d4733f;
+      --gold: #c9a84c;
+      --muted: #7a6f62;
+      --border: #cfc5b4;
+    }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 3.5rem 4rem 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 260px; height: 260px;
+      border-radius: 50%;
+      background: rgba(201,168,76,0.10);
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: 200px;
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      background: rgba(184,92,44,0.12);
+    }
+    .header-eyebrow {
+      font-size: 0.72rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.6rem;
+    }
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 900;
+      line-height: 1.05;
+      color: var(--paper);
+    }
+    header h1 span { color: var(--rust-light); }
+    .header-sub {
+      margin-top: 0.9rem;
+      font-size: 1.05rem;
+      color: #b0a898;
+      max-width: 560px;
+      line-height: 1.55;
+    }
+    nav {
+      margin-top: 2rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    nav a {
+      display: inline-block;
+      padding: 0.45rem 1.1rem;
+      border: 1px solid rgba(205,197,180,0.35);
+      border-radius: 2px;
+      color: var(--paper);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      transition: background 0.18s, border-color 0.18s;
+    }
+    nav a:hover { background: rgba(255,255,255,0.08); border-color: var(--gold); color: var(--gold); }
+    nav a.active { background: var(--rust); border-color: var(--rust); color: #fff; }
+
+    main { max-width: 980px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    @media (max-width: 600px) { .info-grid { grid-template-columns: 1fr; } }
+
+    .info-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1.6rem 1.8rem;
+    }
+    .info-card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.7rem;
+      color: var(--rust);
+      letter-spacing: 0.01em;
+    }
+    .info-card p, .info-card li {
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: #3a3228;
+    }
+    .info-card ul { list-style: none; }
+    .info-card ul li::before { content: '— '; color: var(--gold); }
+
+    .disclaimer {
+      background: #fff8ee;
+      border-left: 3px solid var(--gold);
+      padding: 1rem 1.4rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 3rem;
+      border-radius: 0 2px 2px 0;
+    }
+
+    section { margin-bottom: 2.8rem; }
+    section h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin-bottom: 1.1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--ink);
+    }
+
+    .link-list { list-style: none; display: flex; flex-direction: column; gap: 0.55rem; }
+    .link-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-size: 0.9rem;
+    }
+    .link-list .badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 0.18rem 0.55rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .link-list a {
+      color: var(--rust);
+      text-decoration: none;
+      font-weight: 500;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .link-list a:hover { border-color: var(--rust); }
+    .link-list .dim { color: var(--muted); font-style: italic; font-size: 0.82rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Book<span>Sphere</span></h1>
+  <p class="header-sub">A single page app for searching, exploring, and saving books using the Google Books API and open library data sources.</p>
+  <nav>
+    <a href="index.html" class="active">Home</a>
+    <a href="google-books-search.html">Search results</a>
+    <a href="google-books-book.html">Book detail</a>
+  </nav>
+</header>
+
+<main>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h2>Project Information</h2>
+      <ul>
+        <li><strong>Project: </strong>Book Search SPA</li>
+        <li><strong>Student: </strong>Tsegeab Binchamo</li>
+        <li><strong>Course: </strong>IT 4403 Advanced Web and Mobile Application</li>
+        <li><strong>University: </strong> Kennesaw State University</li>
+        <li><a href="http://ccse.kennesaw.edu/it" target="_blank" rel="noopener">CCSE Department of Information Technology</a></li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h2>About this web page</h2>
+      <p>BookSphere lets users search for books, browse results in multiple views, inspect full book details from the Google Books API, and save a personal reading list. It is made using HTML, CSS, JavaScript, and jQuery.</p>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <strong>Project disclaimer:</strong> This website is a student project made for educational reasons as part of a university course.
+  </div>
+
+  <!-- LAB WORK -->
+  <section>
+    <h2>Lab Work</h2>
+    <ul class="link-list">
+      <li>
+        <span class="badge">Lab 1</span>
+        <span class="dim">Link will be added when published</span>
+      </li>
+      <li>
+        <span class="badge">Lab 2</span>
+        <span class="dim">Link will be added when published</span>
+      </li>
+      <li>
+        <span class="badge">Lab 3</span>
+        <span class="dim">Link will be added when published</span>
+      </li>
+      <li>
+        <span class="badge">Lab 4</span>
+        <span class="dim">Link will be added when published</span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- INDIVIDUAL PROJECT WORK -->
+  <section>
+    <h2>Individual project work</h2>
+    <ul class="link-list">
+      <li>
+        <span class="badge">Milestone 1</span>
+        <a href="google-books-search.html">Search results (google-books-search.json)</a>
+      </li>
+      <li>
+        <span class="badge">Milestone 1</span>
+        <a href="google-books-book.html">Single book detail (google-books-book.json)</a>
+      </li>
+      <li>
+        <span class="badge">Milestone 2</span>
+        <span class="dim">Coming soon – Google books API integration</span>
+      </li>
+      <li>
+        <span class="badge">Milestone 3</span>
+        <span class="dim">Coming soon – AJAX/AJAJ operations</span>
+      </li>
+      <li>
+        <span class="badge">Milestone 4</span>
+        <span class="dim">Coming soon – SPA UI improvements</span>
+      </li>
+    </ul>
+  </section>
+
+</main>
+
+</body>
+</html>
