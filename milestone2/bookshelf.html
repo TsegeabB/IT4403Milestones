@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Bookshelf – BookSphere</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:        #1a1512;
+      --paper:      #f5f0e8;
+      --cream:      #ede7d9;
+      --rust:       #b85c2c;
+      --rust-light: #d4733f;
+      --gold:       #c9a84c;
+      --muted:      #7a6f62;
+      --border:     #cfc5b4;
+      --white:      #ffffff;
+    }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      background: var(--ink);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 3rem; height: 56px;
+    }
+    .nav-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem; font-weight: 900;
+      color: var(--paper); text-decoration: none;
+    }
+    .nav-brand span { color: var(--rust-light); }
+    .nav-links { display: flex; gap: 0.4rem; }
+    .nav-links a {
+      padding: 0.4rem 1rem; border-radius: 2px;
+      color: var(--paper); text-decoration: none;
+      font-size: 0.85rem; font-weight: 500; transition: background 0.15s;
+    }
+    .nav-links a:hover  { background: rgba(255,255,255,0.08); }
+    .nav-links a.active { background: var(--rust); }
+
+    /* HEADER BANNER */
+    .page-header {
+      background: var(--ink);
+      padding: 2.5rem 3rem;
+      position: relative; overflow: hidden;
+    }
+    .page-header::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 180px; height: 180px; border-radius: 50%;
+      background: rgba(201,168,76,0.09);
+    }
+    .page-header .eyebrow {
+      font-size: 0.7rem; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem;
+    }
+    .page-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 900; color: var(--paper);
+    }
+    .page-header h1 span { color: var(--rust-light); }
+    .page-header p {
+      margin-top: 0.5rem; font-size: 0.92rem; color: #9a8f84;
+    }
+
+    /* MAIN */
+    main { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+
+    /* NOTICE BOX */
+    .notice {
+      background: #fff8ee;
+      border-left: 3px solid var(--gold);
+      padding: 0.9rem 1.2rem;
+      font-size: 0.85rem; color: var(--muted);
+      margin-bottom: 2.5rem; border-radius: 0 2px 2px 0;
+      line-height: 1.55;
+    }
+    .notice strong { color: var(--ink); }
+
+    /* TOOLBAR */
+    .shelf-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.8rem;
+    }
+    .shelf-toolbar .shelf-info { font-size: 0.85rem; color: var(--muted); }
+    .shelf-toolbar .shelf-info strong { color: var(--ink); }
+    .view-toggle { display: flex; gap: 0.3rem; }
+    .view-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 2px; padding: 0.3rem 0.65rem;
+      cursor: pointer; font-size: 0.75rem; font-family: inherit;
+      color: var(--muted); transition: all 0.15s;
+    }
+    .view-btn.active { background: var(--rust); border-color: var(--rust); color: #fff; }
+    .view-btn:hover:not(.active) { border-color: var(--rust); color: var(--rust); }
+
+    /* Loading */
+    #loading { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+    .spinner {
+      display: inline-block; width: 38px; height: 38px;
+      border: 3px solid var(--border); border-top-color: var(--rust);
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #error-msg { text-align: center; padding: 3rem; color: #c0392b; font-size: 0.95rem; display: none; }
+
+    /* GRID */
+    #shelf-container.grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 1.4rem;
+    }
+    #shelf-container.list { display: flex; flex-direction: column; gap: 1rem; }
+
+    /* BOOK CARD — grid */
+    .book-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 3px; overflow: hidden; display: flex; flex-direction: column;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .book-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+
+    .grid .cover-wrap {
+      background: var(--cream); height: 200px;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .grid .cover-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .grid .cover-wrap .no-cover {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.72rem; color: var(--muted); text-align: center; padding: 1rem; line-height: 1.4;
+    }
+    .grid .card-body { padding: 0.85rem; flex: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+    .grid .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.88rem; font-weight: 700; line-height: 1.3;
+    }
+    .grid .card-title a { color: var(--ink); text-decoration: none; }
+    .grid .card-title a:hover { color: var(--rust); }
+    .grid .card-author { font-size: 0.76rem; color: var(--rust); font-weight: 500; }
+    .grid .card-publisher { font-size: 0.72rem; color: var(--muted); margin-top: auto; padding-top: 0.3rem; }
+
+    /* BOOK CARD — list */
+    .list .book-card { flex-direction: row; }
+    .list .cover-wrap {
+      width: 80px; min-width: 80px; height: 110px;
+      background: var(--cream);
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .list .cover-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .list .cover-wrap .no-cover { font-size: 0.62rem; color: var(--muted); text-align: center; padding: 0.4rem; }
+    .list .card-body { padding: 0.9rem 1.1rem; flex: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+    .list .card-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; }
+    .list .card-title a { color: var(--ink); text-decoration: none; }
+    .list .card-title a:hover { color: var(--rust); }
+    .list .card-author { font-size: 0.85rem; color: var(--rust); font-weight: 500; }
+    .list .card-desc {
+      font-size: 0.8rem; color: var(--muted); line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .list .card-publisher { font-size: 0.78rem; color: var(--muted); }
+
+    /* RATING */
+    .card-rating { font-size: 0.72rem; color: var(--gold); }
+
+    /* CARD ACTIONS */
+    .card-actions { padding: 0.65rem 0.85rem; border-top: 1px solid var(--border); }
+    .btn-details {
+      display: block; width: 100%; text-align: center;
+      padding: 0.4rem; background: none;
+      border: 1px solid var(--rust); color: var(--rust);
+      border-radius: 2px; font-family: inherit;
+      font-size: 0.78rem; font-weight: 500; cursor: pointer;
+      text-decoration: none; transition: all 0.15s;
+    }
+    .btn-details:hover { background: var(--rust); color: #fff; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">Book<span>Sphere</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="bookshelf.html" class="active">My Bookshelf</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <p class="eyebrow">Milestone 2 · My Bookshelf</p>
+  <h1>My <span>Bookshelf</span></h1>
+  <p>Books from my public Google Books bookshelf, retrieved live via the Google Books API.</p>
+</div>
+
+<main>
+
+  <div class="notice">
+    <strong>How this works:</strong> The Volume IDs below were copied from my public Google Books bookshelf.
+    Each book's full details are fetched live from the Google Books Volumes API endpoint
+    (<code>googleapis.com/books/v1/volumes/{id}</code>) when this page loads.
+    To update this shelf, replace the Volume IDs in the JavaScript with your own.
+  </div>
+
+  <div class="shelf-toolbar" id="shelf-toolbar" style="display:none;">
+    <div class="shelf-info"><strong id="shelf-count"></strong> books on this shelf</div>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-grid" onclick="setView('grid')">⊞ Grid</button>
+      <button class="view-btn"        id="btn-list" onclick="setView('list')">☰ List</button>
+    </div>
+  </div>
+
+  <div id="loading"><div class="spinner"></div><br>Loading your bookshelf…</div>
+  <div id="error-msg"></div>
+  <div id="shelf-container" class="grid"></div>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+  /*
+   * MY BOOKSHELF — Volume IDs
+   * Replace these with the IDs of books on your own public Google Books bookshelf.
+   * To find a book's ID: go to books.google.com, open a book, and copy
+   * the value after ?id= or /books?id= in the URL.
+   *
+   * Example URL: https://books.google.com/books?id=Wfan6L9RGgYC
+   * Volume ID:   Wfan6L9RGgYC
+   */
+  var BOOKSHELF_IDS = [
+    'eTMDAQAAQBAJ',
+    '3TMDAQAAQBAJ',
+    'QTQDAQAAQBAJ',
+    'pTQDAQAAQBAJ',
+    'CTUDAQAAQBAJ',
+    'yHzKAgAAQBAJ',
+    'HgZKCgAAQBAJ',
+    'ClhFDwAAQBAJ',
+    '9629EAAAQBAJ',
+  ];
+
+  var API_BASE  = 'https://www.googleapis.com/books/v1/volumes/';
+  var currentView = 'grid';
+
+  function setView(v) {
+    currentView = v;
+    $('#shelf-container').removeClass('grid list').addClass(v);
+    $('#btn-grid, #btn-list').removeClass('active');
+    if (v === 'grid') $('#btn-grid').addClass('active');
+    else              $('#btn-list').addClass('active');
+  }
+
+  function starsHtml(avg) {
+    var full = Math.round(avg), s = '';
+    for (var i = 0; i < 5; i++) s += i < full ? '★' : '☆';
+    return s;
+  }
+
+  function renderBook(data) {
+    var info   = data.volumeInfo || {};
+    var title  = info.title   || 'Untitled';
+    var authors = info.authors ? info.authors.join(', ') : 'Unknown Author';
+    var publisher = info.publisher || '';
+    var year   = info.publishedDate ? info.publishedDate.substring(0, 4) : '';
+    var desc   = info.description  || '';
+    var rating = info.averageRating || null;
+    var thumb  = info.imageLinks && info.imageLinks.thumbnail
+                   ? info.imageLinks.thumbnail.replace('http://', 'https://')
+                   : null;
+    var bookId    = data.id || '';
+    var detailUrl = 'book-detail.html?id=' + encodeURIComponent(bookId);
+
+    var coverHtml = thumb
+      ? '<img src="' + thumb + '" alt="' + $('<s>').text(title).html() + '" />'
+      : '<div class="no-cover">' + $('<s>').text(title).html() + '</div>';
+
+    var ratingHtml = rating
+      ? '<div class="card-rating">' + starsHtml(rating) + ' ' + rating + '</div>'
+      : '';
+
+    var card = $('<div class="book-card">');
+
+    if (currentView === 'grid') {
+      card.append(
+        '<div class="cover-wrap">' + coverHtml + '</div>' +
+        '<div class="card-body">' +
+          '<div class="card-title"><a href="' + detailUrl + '">' + $('<s>').text(title).html() + '</a></div>' +
+          '<div class="card-author">' + $('<s>').text(authors).html() + '</div>' +
+          ratingHtml +
+          (publisher ? '<div class="card-publisher">' + $('<s>').text(publisher).html() + '</div>' : '') +
+        '</div>' +
+        '<div class="card-actions"><a href="' + detailUrl + '" class="btn-details">View Details →</a></div>'
+      );
+    } else {
+      card.append(
+        '<div class="cover-wrap">' + coverHtml + '</div>' +
+        '<div class="card-body">' +
+          '<div class="card-title"><a href="' + detailUrl + '">' + $('<s>').text(title).html() + '</a></div>' +
+          '<div class="card-author">' + $('<s>').text(authors).html() + '</div>' +
+          (desc ? '<div class="card-desc">' + $('<s>').text(desc).html() + '</div>' : '') +
+          ratingHtml +
+          (publisher ? '<div class="card-publisher">' + $('<s>').text(publisher).html() + (year ? ', ' + year : '') + '</div>' : '') +
+        '</div>'
+      );
+    }
+
+    $('#shelf-container').append(card);
+  }
+
+  $(document).ready(function() {
+    // Fetch books one at a time in sequence so all 9 load reliably
+    var results = [];
+    var failed  = 0;
+
+    function fetchNext(index) {
+      if (index >= BOOKSHELF_IDS.length) {
+        finalize();
+        return;
+      }
+      $.getJSON(API_BASE + encodeURIComponent(BOOKSHELF_IDS[index]))
+        .done(function(data) {
+          results.push(data);
+          fetchNext(index + 1);
+        })
+        .fail(function() {
+          failed++;
+          fetchNext(index + 1);
+        });
+    }
+
+    function finalize() {
+      $('#loading').hide();
+      if (results.length === 0) {
+        $('#error-msg').text('Could not load any books. Please check your connection.').show();
+        return;
+      }
+      // Render all books in the correct order
+      $.each(results, function(_, data) {
+        renderBook(data);
+      });
+      $('#shelf-count').text(results.length);
+      $('#shelf-toolbar').show();
+    }
+
+    fetchNext(0);
+  });
+</script>
+
+</body>
+</html>
