@@ -335,7 +335,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script>
-  var API_BASE = 'https://www.googleapis.com/books/v1/volumes/'
+  var API_BASE = 'https://www.googleapis.com/books/v1/volumes/';
   var MAX_RESULTS = 60;   // total to fetch
   var PER_PAGE    = 12;   // results shown per page
   var currentView = 'grid';
@@ -440,7 +440,7 @@
     renderPage(parseInt($(this).val()));
     $('html,body').animate({scrollTop: 0}, 200);
   });
-
+  
   function doSearch() {
     var q = $('#search-input').val().trim();
     if (!q) return;
@@ -453,17 +453,42 @@
     $('#toolbar').hide();
     $('#loading-state').show();
 
-    var requests = [];
-    var fetchCount = Math.min(MAX_RESULTS, 60);
-    var maxPerReq  = 40;
+    allBooks = [];
 
-    for (var start = 0; start < fetchCount; start += maxPerReq) {
-      var count = Math.min(maxPerReq, fetchCount - start);
-      requests.push(
-        $.getJSON(API_BASE, { q: q, maxResults: count, startIndex: start, printType: 'books' })
-      );
+    $.getJSON(API_BASE, { q: q, maxResults: 40, startIndex: 0, printType: 'books' })
+      .done(function(data) {
+        allBooks = allBooks.concat(data.items || []);
+
+        $.getJSON(API_BASE, { q: q, maxResults: 20, startIndex: 40, printType: 'books' })
+          .done(function(data2) {
+            allBooks = allBooks.concat(data2.items || []);
+            showResults(q);
+          })
+          .fail(function() {
+            showResults(q);
+          });
+      })
+      .fail(function() {
+        $('#loading-state').hide();
+        $('#error-state').text('Failed to fetch results. Please check your connection and try again.').show();
+      });
+  }
+
+  function showResults(q) {
+    $('#loading-state').hide();
+    allBooks = allBooks.slice(0, MAX_RESULTS);
+
+    if (allBooks.length === 0) {
+      $('#error-state').text('No books found for "' + q + '". Try a different search term.').show();
+      return;
     }
 
+    $('#query-label').text('"' + q + '"');
+    $('#count-label').text('Showing up to ' + allBooks.length + ' results');
+    buildPageSelect(allBooks.length);
+    $('#toolbar').css('display', 'flex');
+    renderPage(1);
+  }
     $.when.apply($, requests)
       .done(function() {
         $('#loading-state').hide();
