@@ -179,6 +179,7 @@
 <nav>
   <a href="#" class="brand">Filmcircle</span></a>
   <div class="nav-tabs">
+    <a href="https://tsegeabb.github.io/IT4403Milestones/index.html" class="nav-tab">Project home</a>
     <button class="nav-tab active" data-view="search">Search</button>
     <button class="nav-tab" data-view="collection">Collection</button>
   </div>
@@ -251,12 +252,12 @@ function formatMoney(n) {
 
 function movieToView(m) {
   return {
-    id:       m.id,
-    type:     'movie',
-    title:    m.title || m.name || 'Untitled',
-    poster:   m.poster_path || null,
-    rating:   m.vote_average ? m.vote_average.toFixed(1) : null,
-    year:     m.release_date ? m.release_date.substring(0, 4) : (m.first_air_date ? m.first_air_date.substring(0, 4) : ''),
+    id: m.id,
+    type: 'movie',
+    title: m.title || m.name || 'Untitled',
+    poster: m.poster_path || null,
+    rating: m.vote_average ? m.vote_average.toFixed(1) : null,
+    year: m.release_date ? m.release_date.substring(0, 4) : (m.first_air_date ? m.first_air_date.substring(0, 4) : ''),
     overview: m.overview || ''
   };
 }
@@ -298,24 +299,24 @@ function showDetail(id) {
     data: { api_key: TMDB_KEY },
     success: function(m) {
       var data = {
-        id:         m.id,
-        title:      m.title || 'Untitled',
-        poster:     m.poster_path || null,
-        tagline:    m.tagline || null,
-        rating:     m.vote_average ? m.vote_average.toFixed(1) : null,
-        stars:      m.vote_average ? starsHtml(m.vote_average) : '',
-        votes:      m.vote_count ? m.vote_count.toLocaleString() : '0',
-        overview:   m.overview || null,
-        year:       m.release_date ? m.release_date : null,
-        runtime:    m.runtime || null,
-        language:   m.original_language ? m.original_language.toUpperCase() : null,
-        status:     m.status || null,
-        adult:      m.adult || false,
-        genres:     m.genres ? m.genres.map(function(g){ return g.name; }).join(', ') : null,
-        budget:     formatMoney(m.budget),
-        revenue:    formatMoney(m.revenue),
+        id: m.id,
+        title: m.title || 'Untitled',
+        poster: m.poster_path || null,
+        tagline: m.tagline || null,
+        rating: m.vote_average ? m.vote_average.toFixed(1) : null,
+        stars: m.vote_average ? starsHtml(m.vote_average) : '',
+        votes: m.vote_count ? m.vote_count.toLocaleString() : '0',
+        overview: m.overview || null,
+        year: m.release_date ? m.release_date : null,
+        runtime: m.runtime || null,
+        language: m.original_language ? m.original_language.toUpperCase() : null,
+        status: m.status || null,
+        adult: m.adult || false,
+        genres: m.genres ? m.genres.map(function(g){ return g.name; }).join(', ') : null,
+        budget: formatMoney(m.budget),
+        revenue: formatMoney(m.revenue),
         production: m.production_companies ? m.production_companies.slice(0,2).map(function(c){ return c.name; }).join(', ') : null,
-        homepage:   m.homepage || null
+        homepage: m.homepage || null
       };
       var html = Mustache.render($('#tpl-detail').html(), data);
       $('#detail-panel').html(html);
